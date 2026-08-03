@@ -1,0 +1,15 @@
+$!{define.vm}
+
+#setTableSuffix("ServiceImpl")
+#save("/service/impl", "ServiceImpl.java")
+#setPackageSuffix("service.impl")
+$!{autoImport.vm}
+
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+
+#tableComment("表服务实现类")
+@Service
+public class $!{tableName}
+    extends ServiceImpl<$!{tableInfo.name}Mapper, $!{tableInfo.name}>
+    implements $!{tableInfo.name}Service {}

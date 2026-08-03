@@ -1,0 +1,13 @@
+$!{define.vm}
+
+#setTableSuffix("Mapper")
+#save("/mapper", "Mapper.java")
+#setPackageSuffix("mapper")
+$!{autoImport.vm}
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
+
+#tableComment("表数据库访问层")
+@Mapper
+public interface $!{tableName} extends BaseMapper<$!{tableInfo.name}> {}
