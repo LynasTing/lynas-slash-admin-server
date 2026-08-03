@@ -35,5 +35,9 @@
         </module>
         <module name="NoWhitespaceAfter"/>
         <module name="NoWhitespaceBefore"/>
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="//[^\s]"/>
+            <property name="message" value="Single-line comments must use a space after //."/>
+        </module>
     </module>
 </module>
