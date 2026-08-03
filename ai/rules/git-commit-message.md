@@ -1,0 +1,25 @@
+# Git 提交信息规则
+
+## 格式
+
+本项目使用 Commitlint 和 Conventional Commits。提交标题必须符合：
+
+```txt
+<type>(<scope>): <subject>
+```
+
+`scope` 可省略，但应优先使用实际业务模块，例如 `user`、`role`、`auth`、`config`、`db`。
+
+允许的 `type`：`feat`、`fix`、`refactor`、`perf`、`test`、`docs`、`style`、`build`、`ci`、`chore`、`revert`。
+
+## 内容
+
+- 先读取暂存区的实际变更再生成提交信息；禁止根据文件名臆测。
+- 标题使用祈使语气、英文且不以句号结尾，例如 `feat(user): add account status update`。
+- 改动超过两个独立要点时，在正文中先列完整英文说明，再空一行列完整中文说明；同一条中不要混写两种语言。
+- 一次提交只包含可独立理解的一组改动；无关变更必须拆分。
+- 禁止 `update code`、`fix bug`、`修改文件` 等空泛标题，也不得夸大影响范围。
+
+## 本地校验
+
+安装依赖后，`pnpm run commitlint -- --edit .git/COMMIT_EDITMSG` 可手动校验提交信息；`.husky/commit-msg` 会在提交时自动执行同一检查。

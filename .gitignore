@@ -1,0 +1,54 @@
+# Maven and Java build output
+target/
+out/
+*.class
+*.jar
+*.war
+*.ear
+!.mvn/wrapper/maven-wrapper.jar
+
+# JVM crash and heap-dump files
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# Logs and temporary runtime data
+*.log
+logs/
+*.pid
+*.seed
+*.h2.db
+*.trace.db
+
+# Local Spring Boot configuration and secrets
+src/main/resources/application-local.yml
+src/main/resources/application-local.yaml
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# IDE settings
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+.factorypath
+.sts4-cache/
+.vscode/
+
+# Operating-system and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Node tooling used by Commitlint and Husky
+node_modules/
+.pnpm-store/
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
