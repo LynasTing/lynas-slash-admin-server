@@ -1,0 +1,14 @@
+## EasyCode 通用宏定义。
+
+#macro(setTableSuffix $suffix)
+  #set($tableName = $!tool.append($tableInfo.name, $suffix))
+#end
+
+#macro(setPackageSuffix $suffix)
+#if($suffix != "")package #end#if($tableInfo.savePackageName != "")$!{tableInfo.savePackageName}.#{end}$!suffix;
+#end
+
+#macro(save $path $fileName)
+  $!callback.setSavePath($tool.append($tableInfo.savePath, $path))
+  $!callback.setFileName($tool.append($tableInfo.name, $fileName))
+#end

@@ -3,7 +3,7 @@
 ## 基线
 
 - 使用 Java 21 的稳定语言特性；仅为炫技而引入 `var`、反射、复杂 Stream 链或预览特性是坏设计。
-- Java 使用 2 个空格缩进、UTF-8、LF 换行；一行通常不超过 120 字符。提交前必须以 Spotless 的 Google Java Format 输出为准，IDE 设置不得覆盖该结果。
+- Java 使用 2 个空格缩进、UTF-8、LF 换行；续行同样只额外缩进 2 个空格，一行通常不超过 120 字符。提交前必须以 Spotless 的 Eclipse JDT 格式化输出为准，IDE 设置不得覆盖该结果。
 - 一个顶级 `public` 类型对应一个同名文件。import 不使用通配符；删除未使用 import。
 - 依赖注入采用构造器注入；不要使用字段注入或可变的 `static` 全局状态。
 - 优先不可变：字段可 `final` 则声明为 `final`；集合和返回值不得意外暴露可变内部状态。
@@ -11,12 +11,15 @@
 ## 命名
 
 - 包名全小写，以反向域名为前缀，例如 `com.lynas.slashadmin.user`。
-- 类、接口、枚举、注解和 record 使用 PascalCase 的名词或名词短语，例如 `UserService`、`CreateUserRequest`。
+- 类、接口、枚举和注解使用 PascalCase 的名词或名词短语，例如 `UserService`、`CreateUserRequest`。
 - 方法使用 lowerCamelCase 的动词或动宾短语，例如 `findUserById`、`validatePassword`；布尔查询使用 `is`、`has`、`can` 或 `should` 开头。
 - 变量和参数使用 lowerCamelCase，表达实际含义；禁止拼音、无意义缩写和 `data`、`info`、`temp` 这类泛名。
 - 常量使用 `UPPER_SNAKE_CASE`，且必须是稳定、不变的值；不要把普通配置或魔法数字伪装成常量。
 - 接口不使用 `I` 前缀；实现类不使用无意义 `Impl` 后缀。若存在多个实现，用业务能力命名，例如 `DatabaseTokenStore`。
-- DTO 以用途命名：`CreateUserRequest`、`UpdateUserRequest`、`UserResponse`；禁止 `UserDTO`、`UserVO` 这类不说明方向的名称。
+- 请求 DTO 放在业务模块的 `dto` 包，并以 `Request` 结尾，例如 `CreateUserRequest`。
+- 对外响应模型放在业务模块的 `vo` 包，并以 `Vo` 结尾，例如 `SysRoleVo`；VO 统一使用 `@Data`、`@NoArgsConstructor`、`@AllArgsConstructor`，不得使用 MyBatis-Plus 持久化注解。
+- DTO 和 VO 不得使用 `@TableName`、`@TableId`、`@TableField`、`@TableLogic` 等 MyBatis-Plus 持久化注解；这些注解只属于 `entity` 包中的持久化实体。
+- 当前项目使用 `BeanCopyUtils` 集中处理简单对象复制；业务层只负责定义源对象与目标对象，不应重复编写相同字段的逐项赋值。
 
 ## 枚举与状态值
 
@@ -41,4 +44,4 @@
 - 单行注释使用 `// ` 作为前缀；`//` 后必须保留一个空格，再书写注释内容。
 - 对公共 API、复杂算法、事务/并发语义、安全判断和易被误用的约束使用 Javadoc 或块注释。
 - 简单 getter、显而易见的 CRUD、私有实现细节不写模板化注释。禁止行尾注释和过期注释。
-- 注释语言与现有模块保持一致；涉及外部契约、错误码或复杂业务规则时，优先写清晰的中文，并保留必要的标准术语。
+- 本项目的代码注释必须使用中文；仅在标准术语、外部契约字段或代码标识符无法替代时保留必要的英文。

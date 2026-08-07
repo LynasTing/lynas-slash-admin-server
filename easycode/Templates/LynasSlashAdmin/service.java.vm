@@ -1,0 +1,18 @@
+## 生成 MyBatis-Plus Service 接口。
+$!{define.vm}
+
+#setTableSuffix("Service")
+#save("/service", "Service.java")
+#setPackageSuffix("service")
+$!{autoImport.vm}
+
+import com.baomidou.mybatisplus.extension.service.IService;
+
+/**
+ * $!{tableInfo.comment} 表的基础服务接口。
+ *
+ * <p>{@code IService} 提供单表基础操作；涉及业务校验、事务或多个数据源协调的用例应在此扩展明确的方法。
+ *
+ * @author LynasTing
+ */
+public interface $!{tableName} extends IService<$!{tableInfo.name}> {}

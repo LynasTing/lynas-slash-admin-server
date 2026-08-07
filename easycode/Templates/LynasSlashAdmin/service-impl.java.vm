@@ -1,3 +1,4 @@
+## 生成 MyBatis-Plus Service 实现。
 $!{define.vm}
 
 #setTableSuffix("ServiceImpl")
@@ -8,7 +9,13 @@ $!{autoImport.vm}
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
-#tableComment("表服务实现类")
+/**
+ * $!{tableInfo.comment} 表基础服务的实现。
+ *
+ * <p>{@code @Service} 将本类注册为 Spring Bean；{@code ServiceImpl} 复用 MyBatis-Plus 的单表 CRUD。跨表写操作应在具体方法上定义事务边界。
+ *
+ * @author LynasTing
+ */
 @Service
 public class $!{tableName}
     extends ServiceImpl<$!{tableInfo.name}Mapper, $!{tableInfo.name}>

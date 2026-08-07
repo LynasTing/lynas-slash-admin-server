@@ -1,3 +1,4 @@
+## 生成 MyBatis-Plus Mapper。
 $!{define.vm}
 
 #setTableSuffix("Mapper")
@@ -8,6 +9,12 @@ $!{autoImport.vm}
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
-#tableComment("表数据库访问层")
+/**
+ * $!{tableInfo.comment} 表的数据访问接口。
+ *
+ * <p>{@code @Mapper} 让 MyBatis 将本接口注册为 Mapper Bean；{@code BaseMapper} 提供基础 CRUD，不应在此接口编排业务逻辑。
+ *
+ * @author LynasTing
+ */
 @Mapper
 public interface $!{tableName} extends BaseMapper<$!{tableInfo.name}> {}

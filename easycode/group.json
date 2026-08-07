@@ -1,0 +1,11 @@
+[
+  {
+    "groupName": "LynasSlashAdmin",
+    "templateName": "LynasSlashAdmin",
+    "globalConfigName": "LynasSlashAdmin",
+    "columnConfigName": "Default.json",
+    "typeMapperName": "JavaTime.json",
+    "tableNameRegex": ".*",
+    "schemaNameRegex": ".*"
+  }
+]
