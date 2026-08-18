@@ -85,7 +85,12 @@
 						<version>4.26</version>
 						<file>${project.basedir}/config/formatter/eclipse-java-formatter.xml</file>
 					</eclipse>
-					</java>
+					<replaceRegex>
+						<name>Remove blank lines between annotations</name>
+						<searchRegex>(\R[ \t]*@[^\r\n]+)\R[ \t]*\R([ \t]*@)</searchRegex>
+						<replacement>$1&#10;$2</replacement>
+					</replaceRegex>
+				</java>
 				</configuration>
 				<executions>
 					<execution>

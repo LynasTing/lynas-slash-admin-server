@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectTasksOptions">
+    <TaskOptions isEnabled="true">
+      <option name="arguments" value="spotless:apply" />
+      <option name="checkSyntaxErrors" value="false" />
+      <option name="description" value="Use the project's Eclipse formatter whenever a Java file is saved." />
+      <option name="exitCodeBehavior" value="ERROR" />
+      <option name="fileExtension" value="java" />
+      <option name="immediateSync" value="false" />
+      <option name="name" value="Format Java with Spotless on save" />
+      <option name="output" value="" />
+      <option name="outputFilters">
+        <array />
+      </option>
+      <option name="outputFromStdout" value="false" />
+      <option name="program" value="$ProjectFileDir$/mvnw" />
+      <option name="scopeName" value="Project Files" />
+      <option name="trackOnlyRoot" value="false" />
+      <option name="workingDir" value="$ProjectFileDir$" />
+      <envs />
+    </TaskOptions>
+  </component>
+</project>

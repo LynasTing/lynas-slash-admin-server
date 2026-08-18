@@ -29,7 +29,8 @@ src/main/resources/application-local.yaml
 !.env.*.example
 
 # IDE settings
-.idea/
+.idea/*
+!.idea/watcherTasks.xml
 *.iml
 .project
 .classpath

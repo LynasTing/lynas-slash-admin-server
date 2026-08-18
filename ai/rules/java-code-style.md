@@ -19,7 +19,16 @@
 - 请求 DTO 放在业务模块的 `dto` 包，并以 `Request` 结尾，例如 `CreateUserRequest`。
 - 对外响应模型放在业务模块的 `vo` 包，并以 `Vo` 结尾，例如 `SysRoleVo`；VO 统一使用 `@Data`、`@NoArgsConstructor`、`@AllArgsConstructor`，不得使用 MyBatis-Plus 持久化注解。
 - DTO 和 VO 不得使用 `@TableName`、`@TableId`、`@TableField`、`@TableLogic` 等 MyBatis-Plus 持久化注解；这些注解只属于 `entity` 包中的持久化实体。
+- DTO 和 VO 中相邻字段（包括各自的校验与 OpenAPI 注解）之间必须保留一个空行；同一字段的注解与字段声明之间不得插入空行。
 - 当前项目使用 `BeanCopyUtils` 集中处理简单对象复制；业务层只负责定义源对象与目标对象，不应重复编写相同字段的逐项赋值。
+
+## VO 与 OpenAPI Schema
+
+- 对外响应 VO 的类和每个对外字段必须使用 `@Schema`；类注解说明该模型的用途，字段注解定义接口契约。
+- `@Schema(description = "...")` 必须准确说明字段的业务含义。枚举值、单位、取值范围、排序方向、空值语义或特殊约定会影响调用方时，必须在 `description` 中写清楚。
+- 字段存在具有代表性的合法值时，应提供 `example`；示例必须符合字段类型和真实业务语义，不得使用误导性的占位值。
+- 必填性、只读性、格式或长度约束已在接口契约中确定时，应通过 `requiredMode`、`accessMode`、`format`、`minLength`、`maxLength` 等 `@Schema` 属性表达；未确认的约束不得臆造。
+- VO 字段不再编写与 `@Schema` 重复的 Javadoc 或块注释。仅当字段存在无法在 OpenAPI 契约中表达的实现约束或设计取舍时，才添加简短的中文注释。
 
 ## 枚举与状态值
 
