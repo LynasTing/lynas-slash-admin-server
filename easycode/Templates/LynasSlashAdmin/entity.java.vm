@@ -2,15 +2,11 @@ $!{define.vm}
 
 #save("/entity", ".java")
 #setPackageSuffix("entity")
-#set($hasLogicDelete = false)
 #set($hasBigDecimal = false)
 #set($hasLocalDate = false)
 #set($hasLocalDateTime = false)
 #set($hasLocalTime = false)
 #foreach($column in $tableInfo.otherColumn)
-#if($column.name == "deleted" || $column.name == "delFlag")
-#set($hasLogicDelete = true)
-#end
 #if($column.type == "java.math.BigDecimal")
 #set($hasBigDecimal = true)
 #end
@@ -41,9 +37,6 @@ $!{define.vm}
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-#if($hasLogicDelete)
-import com.baomidou.mybatisplus.annotation.TableLogic;
-#end
 import com.baomidou.mybatisplus.annotation.TableName;
 #if($hasBigDecimal)
 import java.math.BigDecimal;
@@ -64,8 +57,7 @@ import lombok.Setter;
  * $!{tableInfo.comment} 表对应的持久化实体。
  *
  * <p>{@code @TableName} 指定本类映射的数据库表；{@code @TableId} 标记主键并指定 UUID 主键策略。{@code @Getter} 与 {@code @Setter}
- * 由 Lombok 在编译时为本类字段生成访问方法；它们不参与数据库字段映射。字段名为 {@code deleted} 或 {@code delFlag} 时，{@code @TableLogic}
- * 使 MyBatis-Plus 将删除操作改为逻辑删除，并在查询中自动过滤已删除记录。
+ * 由 Lombok 在编译时为本类字段生成访问方法；它们不参与数据库字段映射。
  *
  * @author LynasTing
  */
@@ -89,9 +81,6 @@ public class $!{tableInfo.name} {
   /**
    * $!{column.comment}
    */
-#end
-#if($column.name == "deleted" || $column.name == "delFlag")
-  @TableLogic
 #end
   private $!{tool.getClsNameByFullName($column.type)} $!{column.name};
 

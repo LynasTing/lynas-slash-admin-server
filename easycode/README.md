@@ -21,7 +21,7 @@
 
 - 模板按当前项目的垂直模块结构生成到 `entity`、`mapper`、`service` 和 `service.impl` 包。
 - 实体主键使用 `IdType.ASSIGN_UUID`，适用于当前项目的 `CHAR(36)` UUID 主键；自增主键表必须在生成后改为匹配的主键策略。
-- 名为 `deleted` 或 `delFlag` 的字段自动加 `@TableLogic`；当前项目的全局逻辑删除字段为 `deleted`。
+- 不启用 MyBatis-Plus 逻辑删除；`deleted` 或 `delFlag` 仅按普通数据库字段生成。
 - 数据库字段注释生成在字段上方的 Javadoc 中；每个“字段注释 + 字段”之间保留一个空行，不生成字段行内单行注释。
 - 模板生成的类作者固定为 `LynasTing`，且不生成 `Serializable` 或 `serialVersionUID`。当前实体未使用 Java 原生序列化，保留它们没有收益。
 - `TypeMapperConfig/JavaTime.json` 将 `datetime`、`timestamp` 映射为 `LocalDateTime`，并保留 `date` → `LocalDate`、`time` → `LocalTime` 的语义。
