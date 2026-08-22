@@ -31,6 +31,9 @@ src/main/resources/application-local.yaml
 # IDE settings
 .idea/*
 !.idea/watcherTasks.xml
+!.idea/codeStyles/
+!.idea/codeStyles/codeStyleConfig.xml
+!.idea/codeStyles/Project.xml
 *.iml
 .project
 .classpath
