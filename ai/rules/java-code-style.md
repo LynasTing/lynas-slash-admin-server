@@ -17,7 +17,7 @@
 - 常量使用 `UPPER_SNAKE_CASE`，且必须是稳定、不变的值；不要把普通配置或魔法数字伪装成常量。
 - 接口不使用 `I` 前缀；实现类不使用无意义 `Impl` 后缀。若存在多个实现，用业务能力命名，例如 `DatabaseTokenStore`。
 - 请求 DTO 放在业务模块的 `dto` 包，并以 `Request` 结尾，例如 `CreateUserRequest`。
-- 对外响应模型放在业务模块的 `vo` 包，并以 `Vo` 结尾，例如 `SysRoleVo`；VO 统一使用 `@Data`、`@NoArgsConstructor`、`@AllArgsConstructor`，不得使用 MyBatis-Plus 持久化注解。
+- 对外响应模型放在业务模块的 `vo` 包，并以 `Vo` 结尾，例如 `SysRoleVo`；缩略词按 PascalCase 命名，不使用全大写后缀，例如 `Dto`、`Vo`，不得使用 `DTO`、`VO`。VO 统一使用 `@Data`、`@NoArgsConstructor`、`@AllArgsConstructor`，不得使用 MyBatis-Plus 持久化注解。
 - DTO 和 VO 不得使用 `@TableName`、`@TableId`、`@TableField`、`@TableLogic` 等 MyBatis-Plus 持久化注解；这些注解只属于 `entity` 包中的持久化实体。
 - DTO 和 VO 中相邻字段（包括各自的校验与 OpenAPI 注解）之间必须保留一个空行；同一字段的注解与字段声明之间不得插入空行。
 - 当前项目使用 `BeanCopyUtils` 集中处理简单对象复制；业务层只负责定义源对象与目标对象，不应重复编写相同字段的逐项赋值。
