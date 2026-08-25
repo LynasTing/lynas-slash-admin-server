@@ -4,6 +4,7 @@
 
 - 使用 Java 21 的稳定语言特性；仅为炫技而引入 `var`、反射、复杂 Stream 链或预览特性是坏设计。
 - Java 使用 2 个空格缩进、UTF-8、LF 换行；续行同样只额外缩进 2 个空格，一行通常不超过 120 字符。提交前必须以 Spotless 的 Eclipse JDT 格式化输出为准，IDE 设置不得覆盖该结果。
+- `package` 声明后必须保留一个空行，再声明 `import` 或顶级类型。
 - 一个顶级 `public` 类型对应一个同名文件。import 不使用通配符；删除未使用 import。
 - 依赖注入采用构造器注入；不要使用字段注入或可变的 `static` 全局状态。
 - 优先不可变：字段可 `final` 则声明为 `final`；集合和返回值不得意外暴露可变内部状态。
@@ -20,6 +21,7 @@
 - 对外响应模型放在业务模块的 `vo` 包，并以 `Vo` 结尾，例如 `SysRoleVo`；缩略词按 PascalCase 命名，不使用全大写后缀，例如 `Dto`、`Vo`，不得使用 `DTO`、`VO`。VO 统一使用 `@Data`、`@NoArgsConstructor`、`@AllArgsConstructor`，不得使用 MyBatis-Plus 持久化注解。
 - DTO 和 VO 不得使用 `@TableName`、`@TableId`、`@TableField`、`@TableLogic` 等 MyBatis-Plus 持久化注解；这些注解只属于 `entity` 包中的持久化实体。
 - DTO 和 VO 中相邻字段（包括各自的校验与 OpenAPI 注解）之间必须保留一个空行；同一字段的注解与字段声明之间不得插入空行。
+- 类中相邻成员之间必须保留一个空行。成员自身的注解、Javadoc 或块注释与该成员声明视为一个整体，整体内部不得插入空行。
 - 当前项目使用 `BeanCopyUtils` 集中处理简单对象复制；业务层只负责定义源对象与目标对象，不应重复编写相同字段的逐项赋值。
 
 ## VO 与 OpenAPI Schema
