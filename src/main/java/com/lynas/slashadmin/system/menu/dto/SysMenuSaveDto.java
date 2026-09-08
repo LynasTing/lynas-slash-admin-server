@@ -1,4 +1,5 @@
 package com.lynas.slashadmin.system.menu.dto;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -58,6 +59,10 @@ public class SysMenuSaveDto {
   @Size(max = 128, message = "菜单图标不能超过 128 个字符")
   @Schema(description = "菜单图标", example = "UserFilled")
   private String icon;
+
+  @Size(max = 255, message = "国际化翻译键不能超过 255 个字符")
+  @Schema(description = "前端国际化翻译键；为空时由前端自行决定展示文案", example = "route.system.role")
+  private String i18nKey;
 
   @NotNull(message = "隐藏状态不能为空")
   @Min(value = 0, message = "隐藏状态只能为 0 或 1")

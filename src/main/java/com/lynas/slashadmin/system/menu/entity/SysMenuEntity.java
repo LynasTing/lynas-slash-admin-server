@@ -1,6 +1,7 @@
 package com.lynas.slashadmin.system.menu.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Getter;
@@ -29,7 +30,7 @@ public class SysMenuEntity {
   /**
    * 父级菜单ID, 0表示根节点
    */
-  private Object parentId;
+  private Long parentId;
 
   /**
    * 菜单名称
@@ -44,17 +45,17 @@ public class SysMenuEntity {
   /**
    * 节点类型 1 分组 2 目录 3 菜单 4 操作按钮
    */
-  private Object category;
+  private Integer category;
 
   /**
    * 排序值，越小越靠前
    */
-  private Object sort;
+  private Integer sort;
 
   /**
    * 状态 0 禁用  1 启用
    */
-  private Object status;
+  private Integer status;
 
   /**
    * 前端路由路径
@@ -72,9 +73,15 @@ public class SysMenuEntity {
   private String icon;
 
   /**
+   * 前端国际化翻译键
+   */
+  @TableField("i18n_key")
+  private String i18nKey;
+
+  /**
    * 是否隐藏 0 否 1 是
    */
-  private Object hidden;
+  private Integer hidden;
 
   /**
    * 菜单描述
