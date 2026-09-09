@@ -1,8 +1,15 @@
 package com.lynas.slashadmin.common.exception;
+
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.lynas.slashadmin.common.response.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -27,6 +34,26 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+  private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+  /**
+   * 处理无法解析的请求体。
+   *
+   * <p>Jackson 严格模式下，DTO 中未声明的字段会被视为请求格式错误，而不是服务端故障。
+   *
+   * @param exception Spring 封装的请求体解析异常
+   * @param request 当前 HTTP 请求
+   * @return HTTP 400，响应体说明请求体格式错误或未识别字段
+   */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(
+    HttpMessageNotReadableException exception,
+    HttpServletRequest request) {
+    String message = resolveRequestBodyMessage(exception);
+    LOGGER.warn("请求体解析失败: method={}, uri={}, message={}", request.getMethod(), request.getRequestURI(), message);
+    return ResponseEntity.badRequest().body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), message));
+  }
+
   /**
    * 处理控制器参数校验失败。
    *
@@ -62,8 +89,28 @@ public class GlobalExceptionHandler {
    * @return HTTP 409，表示请求格式合法，但当前资源状态与该操作冲突
    */
   @ExceptionHandler(DataIntegrityViolationException.class)
-  public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException() {
+  public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(
+    HttpServletRequest request) {
+    LOGGER.warn("数据约束冲突: method={}, uri={}", request.getMethod(), request.getRequestURI());
     return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(HttpStatus.CONFLICT.value(), "数据约束冲突"));
+  }
+
+  /**
+   * 处理数据库访问失败。
+   *
+   * <p>数据库连接、SQL 语句或表结构异常属于服务端运行环境问题，详细堆栈仅写入服务端日志。
+   *
+   * @param exception 数据库访问异常
+   * @param request 当前 HTTP 请求
+   * @return HTTP 500，避免向客户端暴露数据库内部信息
+   */
+  @ExceptionHandler(DataAccessException.class)
+  public ResponseEntity<ApiResponse<Void>> handleDataAccessException(
+    DataAccessException exception,
+    HttpServletRequest request) {
+    LOGGER.error("数据库访问失败: method={}, uri={}", request.getMethod(), request.getRequestURI(), exception);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+      .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "服务器内部错误"));
   }
 
   /**
@@ -85,8 +132,29 @@ public class GlobalExceptionHandler {
    * @return HTTP 500，客户端只收到通用提示；详细异常应留在服务端日志中
    */
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<ApiResponse<Void>> handleUnexpectedException() {
+  public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(
+    Exception exception,
+    HttpServletRequest request) {
+    LOGGER.error("未处理的服务端异常: method={}, uri={}", request.getMethod(), request.getRequestURI(), exception);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
       .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "服务器内部错误"));
+  }
+
+  /**
+   * 从 Jackson 根因中提取可安全返回给客户端的请求体错误。
+   *
+   * @param exception Spring 请求体解析异常
+   * @return 面向客户端的安全错误说明
+   */
+  private String resolveRequestBodyMessage(
+    HttpMessageNotReadableException exception) {
+    Throwable cause = exception.getCause();
+    while (cause != null) {
+      if (cause instanceof UnrecognizedPropertyException unrecognizedPropertyException) {
+        return "包含未识别字段：" + unrecognizedPropertyException.getPropertyName();
+      }
+      cause = cause.getCause();
+    }
+    return "请求体格式不正确";
   }
 }
