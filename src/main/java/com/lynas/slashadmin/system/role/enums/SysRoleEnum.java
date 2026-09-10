@@ -11,12 +11,17 @@ public enum SysRoleEnum implements ResponseCode {
   /**
    * 角色编码已存在
    */
-  CODE_ALREADY_EXISTS(511, "角色编码已存在"),
+  CODE_ALREADY_EXISTS(514, "角色编码已存在"),
 
   /**
    * 角色不存在
    */
-  ROLE_NOT_EXIST(512, "角色不存在");
+  ROLE_NOT_EXIST(512, "角色不存在"),
+
+  /**
+   * 角色仍被用户使用。
+   */
+  ROLE_IN_USE(513, "角色已分配给用户，无法删除");
 
   private final int code;
   private final String message;
