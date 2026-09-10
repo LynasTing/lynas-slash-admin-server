@@ -1,4 +1,5 @@
 package com.lynas.slashadmin.common.response;
+
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;

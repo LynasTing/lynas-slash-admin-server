@@ -1,4 +1,5 @@
 package com.lynas.slashadmin.common.enums;
+
 public enum ResponseCodeEnum implements ResponseCode {
   /**
    * 成功

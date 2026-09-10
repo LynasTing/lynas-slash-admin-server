@@ -1,4 +1,5 @@
 package com.lynas.slashadmin.common.response;
+
 import com.lynas.slashadmin.common.enums.ResponseCode;
 import com.lynas.slashadmin.common.enums.ResponseCodeEnum;
 import lombok.Data;

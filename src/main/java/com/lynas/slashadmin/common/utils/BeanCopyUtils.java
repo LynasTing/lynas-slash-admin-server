@@ -1,4 +1,5 @@
 package com.lynas.slashadmin.common.utils;
+
 import org.springframework.beans.BeanUtils;
 
 import java.util.List;

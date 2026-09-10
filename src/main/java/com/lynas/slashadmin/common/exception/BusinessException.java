@@ -1,4 +1,5 @@
 package com.lynas.slashadmin.common.exception;
+
 import com.lynas.slashadmin.common.enums.ResponseCode;
 import lombok.Getter;
 

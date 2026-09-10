@@ -1,4 +1,5 @@
 package com.lynas.slashadmin.system.role.mapper;
+
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.lynas.slashadmin.system.role.entity.SysRoleEntity;
 import org.apache.ibatis.annotations.Mapper;
