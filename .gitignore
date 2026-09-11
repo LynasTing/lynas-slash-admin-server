@@ -58,4 +58,9 @@ yarn-debug.log*
 yarn-error.log*
 
 ai-chat.md
-sql/
+
+# Local database initialization scripts are never committed
+/sql/
+
+# Flyway migrations are local AI-generated artifacts and are never committed
+/src/main/resources/db/migration/
