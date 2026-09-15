@@ -4,9 +4,11 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.web.context.WebServerApplicationContext;
 
 @SpringBootApplication
+@ConfigurationPropertiesScan
 @OpenAPIDefinition(
   info = @Info(title = "Lynas Slash Admin API", version = "v1", description = "Lynas Slash Admin 后端接口文档"))
 public class LynasSlashAdminServerApplication {
