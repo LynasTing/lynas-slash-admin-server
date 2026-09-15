@@ -4,3 +4,20 @@ spring:
     username: root
     password: replace-with-your-local-password
     driver-class-name: com.mysql.cj.jdbc.Driver
+security:
+  jwt:
+    issuer: lynas-slash-admin-server
+    audience: lynas-slash-admin-web
+    secret-base64: ${JWT_SECRET_BASE64}
+    access-token-ttl: PT15M
+    refresh-token-ttl: PT72H
+  cors:
+    allowed-origins:
+      - http://localhost:5678
+  refresh-cookie:
+    name: REFRESH_TOKEN
+    path: /
+    http-only: true
+    secure: false
+    same-site: Strict
+    max-age: PT72H
