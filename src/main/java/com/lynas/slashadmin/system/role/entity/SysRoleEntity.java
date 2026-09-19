@@ -33,4 +33,8 @@ public class SysRoleEntity {
   private LocalDateTime createdAt;
   /** 最后更新时间。 */
   private LocalDateTime updatedAt;
+  /**
+  * 逻辑删除状态：0 表示正常，1 表示已删除。
+  */
+  private Integer deleted;;
 }
