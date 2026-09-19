@@ -58,6 +58,10 @@ public class SysUserEntity {
    */
   private Integer deleted;
   /**
+   * 认证版本；用户状态、密码或授权变化时递增，使旧 access token 立即失效
+   */
+  private Integer authVersion;
+  /**
    * Creation time
    */
   private LocalDateTime createdAt;
