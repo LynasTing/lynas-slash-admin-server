@@ -58,6 +58,6 @@ public class SysUserSaveDto {
   @Schema(description = "启用状态：0 表示禁用，1 表示启用", example = "1")
   private Integer status;
 
-  @Schema(description = "关联角色主键 ID 列表", example = "[1, 2]")
+  @Schema(description = "关联角色主键 ID 列表；更新时不传表示保持原角色，传空数组表示清空角色", example = "[1, 2]")
   private List<@NotNull(message = "角色 ID 不能为空") @Positive(message = "角色 ID 必须大于 0") Long> roleIds;
 }
