@@ -3,6 +3,7 @@ package com.lynas.slashadmin.system.user.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import com.lynas.slashadmin.auth.service.AuthSessionService;
 import com.lynas.slashadmin.common.enums.ResponseCodeEnum;
 import com.lynas.slashadmin.common.exception.BusinessException;
 import com.lynas.slashadmin.common.response.ApiResponse;
@@ -24,10 +25,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,11 +41,19 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUserEntity
 
   private final PasswordEncoder passwordEncoder;
 
+  /**
+   * 认证会话失效服务
+   *
+   * <p>密码、状态或角色变化时，通过该服务递增 auth_version 并撤销 refresh 会话
+   */
+  private final AuthSessionService authSessionService;
+
   public SysUserServiceImpl(SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper,
-    PasswordEncoder passwordEncoder) {
+    PasswordEncoder passwordEncoder, AuthSessionService authSessionService) {
     this.sysRoleMapper = sysRoleMapper;
     this.sysUserRoleMapper = sysUserRoleMapper;
     this.passwordEncoder = passwordEncoder;
+    this.authSessionService = authSessionService;
   }
 
   /**
@@ -190,12 +201,35 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUserEntity
     Long id,
     SysUserSaveDto args) {
     validateUserId(id);
-    if (Objects.isNull(getById(id))) {
+
+    SysUserEntity existingUser = getById(id);
+    if (existingUser == null) {
       throw new BusinessException(SysUserEnums.USER_NOT_EXIST);
     }
+
     validateUpdatePassword(args.getPassword());
     validateUnique(id, args);
-    List<Long> roleIds = validateRoleIds(args.getRoleIds());
+
+    // 是否明确传入了角色列表
+    boolean rolesProvided = args.getRoleIds() != null;
+
+    // 查询修改前的角色关系
+    List<Long> existingRoleIds = getRoleIdsByUserId(List.of(id)).getOrDefault(id, List.of());
+
+    // roleIds 未传入时保持原角色关系；传入空数组时得到空列表
+    List<Long> roleIds = rolesProvided ? validateRoleIds(args.getRoleIds()) : existingRoleIds;
+
+    // 判断密码是否发生变化
+    boolean pwdChanged = StringUtils.hasText(args.getPassword());
+
+    // 判断用户启用状态是否发生变化
+    boolean statusChanged = args.getStatus() != null && !Objects.equals(args.getStatus(), existingUser.getStatus());
+
+    // 只有明确传入角色列表时（roleIds != null），才判断角色关系是否发生变化
+    Set<Long> oldRoleIdSet = new HashSet<>(existingRoleIds);
+    Set<Long> newRoleIdSet = new HashSet<>(roleIds);
+    boolean rolesChanged = rolesProvided && !oldRoleIdSet.equals(newRoleIdSet);
+
     SysUserEntity user = BeanCopyUtils.beanCopy(args, SysUserEntity.class);
     user.setId(id);
     // 空密码表示保留数据库中的既有散列，不能把表单占位值覆盖为明文空字符串。
@@ -207,7 +241,17 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUserEntity
     if (!updateById(user)) {
       throw new IllegalStateException(ResponseCodeEnum.SYSTEM_ERROR.getMessage());
     }
-    replaceUserRoles(id, roleIds);
+
+    // 只有明确传入 roleIds 时，才修改角色关系
+    if (rolesProvided) {
+      replaceUserRoles(id, roleIds);
+    }
+
+    // 密码、状态或角色发生变化时，使已有的认证会话全部失效
+    if (pwdChanged || statusChanged || rolesChanged) {
+      authSessionService.incrementAuthVersionAndRevoke(id);
+    }
+
     return ApiResponse.success();
   }
 
@@ -222,6 +266,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUserEntity
     if (Objects.isNull(getById(id))) {
       throw new BusinessException(SysUserEnums.USER_NOT_EXIST);
     }
+
+    // 删除用户前先撤销该用户所有的 refresh 会话
+    authSessionService.revokeAllByUserId(id);
+
     sysUserRoleMapper.delete(new LambdaQueryWrapper<SysUserRoleEntity>().eq(SysUserRoleEntity::getUserId, id));
     if (!removeById(id)) {
       throw new BusinessException(ResponseCodeEnum.SYSTEM_ERROR);
