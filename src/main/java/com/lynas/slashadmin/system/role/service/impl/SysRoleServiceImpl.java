@@ -3,6 +3,7 @@ package com.lynas.slashadmin.system.role.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import com.lynas.slashadmin.auth.service.AuthSessionService;
 import com.lynas.slashadmin.common.enums.ResponseCodeEnum;
 import com.lynas.slashadmin.common.exception.BusinessException;
 import com.lynas.slashadmin.common.response.ApiResponse;
@@ -28,8 +29,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * 角色业务实现。
@@ -45,12 +48,20 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRoleEntity
 
   private final SysUserRoleMapper sysUserRoleMapper;
 
+  /**
+   * 认证会话失效服务
+   *
+   * <p>角色或角色菜单权限变化时，使关联用户的旧认证会话失效
+   */
+  private final AuthSessionService authSessionService;
+
   public SysRoleServiceImpl(SysMenuService sysMenuService, SysRoleMapper sysRoleMapper,
-    SysRoleMenuMapper sysRoleMenuMapper, SysUserRoleMapper sysUserRoleMapper) {
+    SysRoleMenuMapper sysRoleMenuMapper, SysUserRoleMapper sysUserRoleMapper, AuthSessionService authSessionService) {
     this.sysMenuService = sysMenuService;
     this.sysRoleMapper = sysRoleMapper;
     this.sysRoleMenuMapper = sysRoleMenuMapper;
     this.sysUserRoleMapper = sysUserRoleMapper;
+    this.authSessionService = authSessionService;
   }
 
   /**
@@ -153,6 +164,41 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRoleEntity
   }
 
   /**
+   * 查询角色 ID 指定角色的用户 ID
+   *
+   * @param roleId 角色 ID
+   * @return 拥有该角色的用户 ID 集合
+   */
+  private Set<Long> findUserIdsByRoleId(
+    Long roleId) {
+    // 1. 创建查询条件构造器
+    LambdaQueryWrapper<SysUserRoleEntity> queryWrapper = new LambdaQueryWrapper<>();
+
+    // 2.只查询用户 ID 字段
+    queryWrapper.select(SysUserRoleEntity::getUserId);
+
+    // 3.设置角色 ID 查询条件
+    queryWrapper.eq(SysUserRoleEntity::getRoleId, roleId);
+
+    // 4.查询用户角色关联记录
+    List<SysUserRoleEntity> userRoles = sysUserRoleMapper.selectList(queryWrapper);
+
+    // 5.创建用户 ID 集合，自动去重
+    Set<Long> userIds = new HashSet<>();
+
+    // 6.遍历查询结果
+    for (SysUserRoleEntity userRole : userRoles) {
+      // 获取当前记录的用户 ID
+      Long userId = userRole.getUserId();
+      // 将用户 ID 加入集合
+      userIds.add(userId);
+    }
+
+    // 7. 返回
+    return userIds;
+  }
+
+  /**
    * 批量保存 角色与菜单的关系
    */
   private void insertRoleMenu(
@@ -202,6 +248,9 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRoleEntity
       throw new BusinessException(SysRoleEnum.ROLE_NOT_EXIST);
     }
 
+    // 在修改角色前记录受影响的用户
+    Set<Long> affectedUserIds = findUserIdsByRoleId(id);
+
     // 校验
     validateUnique(id, args);
     List<Long> menuIds = validateMenuIds(args.getMenuIds());
@@ -216,6 +265,10 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRoleEntity
     sysRoleMenuMapper.delete(new LambdaQueryWrapper<SysRoleMenuEntity>().eq(SysRoleMenuEntity::getRoleId, id));
 
     insertRoleMenu(role.getId(), menuIds);
+
+    // 角色信息或菜单权限变化后，使关联用户的旧会话失效
+    authSessionService.incrementAuthVersionsAndRevoke(affectedUserIds);
+
     return ApiResponse.success();
   }
 
