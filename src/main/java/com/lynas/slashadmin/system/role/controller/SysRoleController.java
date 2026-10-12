@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -42,6 +43,7 @@ public class SysRoleController {
    */
   @Operation(summary = "分页查询角色列表", description = "按页码和每页数量查询角色数据。")
   @GetMapping("/list")
+  @PreAuthorize("hasAuthority('role:list')")
   public ApiResponse<PageResponse<SysRoleListVo>> getRoleList(
     @Valid
     @ParameterObject
@@ -53,6 +55,7 @@ public class SysRoleController {
    * 获取角色详情及已授权菜单。
    */
   @GetMapping("/{id}")
+  @PreAuthorize("hasAuthority('role:detail')")
   public ApiResponse<SysRoleDetailVo> getRoleDetail(
     @PathVariable Long id) {
     return sysRoleService.getSysRoleDetail(id);
@@ -62,6 +65,7 @@ public class SysRoleController {
    * 新增系统角色
    */
   @PostMapping("/add")
+  @PreAuthorize("hasAuthority('role:add')")
   public ApiResponse<Void> addSysRole(
     @Valid
     @RequestBody SysRoleSaveDto args) {
@@ -72,6 +76,7 @@ public class SysRoleController {
    * 修改系统角色
    */
   @PutMapping("/{id}")
+  @PreAuthorize("hasAuthority('role:update')")
   public ApiResponse<Void> updateSysRoleById(
     @PathVariable Long id,
     @Valid
@@ -83,6 +88,7 @@ public class SysRoleController {
    * 删除系统角色
    */
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAuthority('role:delete')")
   public ApiResponse<Void> deleteSysRoleById(
     @PathVariable Long id) {
     return sysRoleService.deleteSysRoleById(id);
@@ -93,6 +99,7 @@ public class SysRoleController {
    */
   @Operation(summary = "查询角色选项", description = "查询用于下拉选择的全部角色。")
   @GetMapping("/options")
+  @PreAuthorize("hasAuthority('role:options')")
   public ApiResponse<List<SysRoleOptionVo>> getSysRoleOptions() {
     return sysRoleService.getSysRoleOptions();
   }
