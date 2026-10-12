@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +40,7 @@ public class SysUserController {
    */
   @Operation(summary = "分页查询用户列表")
   @GetMapping("/list")
+  @PreAuthorize("hasAuthority('user:list')")
   public ApiResponse<PageResponse<SysUserListVo>> getSysUserList(
     @Valid
     @ParameterObject
@@ -51,6 +53,7 @@ public class SysUserController {
    */
   @Operation(summary = "查询用户详情")
   @GetMapping("/{id}")
+  @PreAuthorize("hasAuthority('user:detail')")
   public ApiResponse<SysUserListVo> getSysUserDetail(
     @PathVariable Long id) {
     return sysUserService.getSysUserDetail(id);
@@ -60,6 +63,7 @@ public class SysUserController {
    * 新增系统用户
    */
   @PostMapping("/add")
+  @PreAuthorize("hasAuthority('user:add')")
   public ApiResponse<Void> addSysUser(
     @Validated({jakarta.validation.groups.Default.class, SysUserSaveDto.Create.class})
     @RequestBody SysUserSaveDto args) {
@@ -70,6 +74,7 @@ public class SysUserController {
    * 更新系统用户
    */
   @PutMapping("/{id}")
+  @PreAuthorize("hasAuthority('user:update')")
   public ApiResponse<Void> putSysUserById(
     @PathVariable Long id,
     @Valid
@@ -81,6 +86,7 @@ public class SysUserController {
    * 删除用户
    */
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAuthority('user:delete')")
   public ApiResponse<Void> deleteSysUserById(
     @PathVariable Long id) {
     return sysUserService.deleteSysUserById(id);
