@@ -12,13 +12,14 @@ IntelliJ 项目已启用 `Format Java with Spotless on save` File Watcher：仅�
 
 1. 在 DBeaver 中连接本机 MySQL，并执行 [`sql/init.sql`](sql/init.sql)。
 2. 复制 `src/main/resources/application-local.example.yml` 为 `application-local.yml`，填写本机 MySQL 密码。该文件已被 Git 忽略。
-3. 执行 `./mvnw spring-boot:run`。
-4. 访问 `http://localhost:8080/actuator/health`，应返回 `UP`。
-5. 访问 `http://localhost:8080/system/user/list`，应返回统一响应格式的用户列表；初始化数据库不预置业务用户。
+3. 生成 JWT 密钥并在当前终端设置环境变量：`export JWT_SECRET_BASE64="$(openssl rand -base64 32)"`。密钥解码后必须至少为 32 字节。
+4. 执行 `./mvnw spring-boot:run`。
+5. 访问 `http://localhost:1982/actuator/health`，应返回 `UP`。
+6. 访问 `http://localhost:1982/system/user/list`，应返回统一响应格式的用户列表；初始化数据库不预置业务用户。
 
 ## 前端联通
 
-前端开发服务器将 `/api` 转发到 `http://localhost:8080`。MSW 默认保持启用，避免在认证接口尚未实现时破坏既有页面；需要请求本地 Spring Boot 服务时，在前端 `.env.development.local` 中设置：
+前端开发服务器将 `/api` 转发到 `http://localhost:1982`。MSW 默认保持启用，避免在认证接口尚未实现时破坏既有页面；需要请求本地 Spring Boot 服务时，在前端 `.env.development.local` 中设置：
 
 ```properties
 VITE_APP_USE_MOCK=false
