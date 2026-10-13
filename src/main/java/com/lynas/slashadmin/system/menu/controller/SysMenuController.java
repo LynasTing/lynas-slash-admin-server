@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +35,7 @@ public class SysMenuController {
    */
   @Operation(summary = "查询菜单树")
   @GetMapping("/list")
+  @PreAuthorize("hasAuthority('menu:list')")
   public ApiResponse<List<SysMenuTreeVo>> getSysMenuList() {
     return sysMenuService.getSysMenuList();
   }
@@ -42,6 +44,7 @@ public class SysMenuController {
    * 新增菜单
    */
   @PostMapping("/add")
+  @PreAuthorize("hasAuthority('menu:add')")
   public ApiResponse<Void> addSysMenu(
     @Valid
     @RequestBody SysMenuSaveDto args) {
@@ -52,6 +55,7 @@ public class SysMenuController {
    * 修改菜单
    */
   @PutMapping("/{id}")
+  @PreAuthorize("hasAuthority('menu:update')")
   public ApiResponse<Void> putSysMenuById(
     @PathVariable Long id,
     @Valid
@@ -63,6 +67,7 @@ public class SysMenuController {
    * 删除菜单
    */
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAuthority('menu:delete')")
   public ApiResponse<Void> deleteSysMenuById(
     @PathVariable Long id) {
     return sysMenuService.deleteSysMenuById(id);
