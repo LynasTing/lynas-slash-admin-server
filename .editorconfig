@@ -10,6 +10,9 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 max_line_length = 120
+# Keep generated and optimized imports compatible with Checkstyle's AvoidStarImport rule.
+ij_java_class_count_to_use_import_on_demand = 999
+ij_java_names_count_to_use_import_on_demand = 999
 
 [*.{yml,yaml,xml,json,md}]
 indent_style = space
