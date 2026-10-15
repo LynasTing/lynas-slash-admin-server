@@ -159,7 +159,15 @@ public class AuthServiceImpl implements AuthService {
       throw new BusinessException(AuthCodeEnum.PARAMETER_MISSING);
     }
 
-    // 2.用户名是否已存在
+    // 2.邮箱是否已存在
+    boolean emailExists = sysUserMapper
+      .exists(new LambdaQueryWrapper<SysUserEntity>().eq(SysUserEntity::getEmail, request.getEmail()));
+
+    if (emailExists) {
+      throw new BusinessException(SysUserEnums.EMAIL_ALREADY_EXISTS);
+    }
+
+    // 3.用户名是否已存在
     boolean usernameExists = sysUserMapper
       .exists(new LambdaQueryWrapper<SysUserEntity>().eq(SysUserEntity::getUsername, request.getUsername()));
 
@@ -167,7 +175,7 @@ public class AuthServiceImpl implements AuthService {
       throw new BusinessException(SysUserEnums.NAME_ALREADY_EXISTS);
     }
 
-    // 3.查询注册用户固定使用的普通角色
+    // 4.查询注册用户固定使用的普通角色
     SysRoleEntity defaultRole = sysRoleMapper
       .selectOne(new LambdaQueryWrapper<SysRoleEntity>().eq(SysRoleEntity::getCode, DEFAULT_REGISTER_ROLE_CODE)
         .eq(SysRoleEntity::getStatus, 1).eq(SysRoleEntity::getDeleted, 0));
@@ -175,16 +183,17 @@ public class AuthServiceImpl implements AuthService {
       throw new BusinessException(ResponseCodeEnum.SYSTEM_ERROR);
     }
 
-    // 4.创建用户实体
+    // 5.创建用户实体
     SysUserEntity user = new SysUserEntity();
     user.setUsername(request.getUsername());
     user.setPassword(passwordEncoder.encode(request.getPassword()));
+    user.setEmail(request.getEmail());
+    user.setNickname(request.getNickname());
     user.setStatus(1);
     user.setDeleted(0);
     user.setAuthVersion(1);
-    user.setEmail(null);
 
-    // 5.在同一个事务中保存用户和默认角色关联
+    // 6.在同一个事务中保存用户和默认角色关联
     transactionTemplate.executeWithoutResult(status -> {
       // 插入表
       int userRows = sysUserMapper.insert(user);
