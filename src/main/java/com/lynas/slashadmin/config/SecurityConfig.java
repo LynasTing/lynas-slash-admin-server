@@ -11,11 +11,18 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
+
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 /**
  * Spring Security 全局安全配置
@@ -26,6 +33,37 @@ import java.util.List;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+  /**
+   * 无需登录即可访问的接口路径
+   */
+  private static final String[] PUBLIC_ENDPOINTS = {"/auth/register", "/auth/login", "/auth/token/refresh",
+    "/auth/logout", "/auth/token/csrf", "/actuator/health", "/v3/api-docs/**", "/swagger-ui/**"};
+
+  /**
+   * 收到 Authorization 请求头时不解析 Bearer Token 的接口路径。
+   *
+   * <p>该配置只影响 Token 解析，不改变接口是否允许匿名访问，也不影响 refresh Cookie 的读取。
+   */
+  private static final String[] TOKEN_IGNORED_ENDPOINTS = {"/auth/register", "/auth/login", "/auth/token/refresh",
+    "/auth/logout", "/auth/token/csrf", "/actuator/health", "/v3/api-docs/**", "/swagger-ui/**"};
+
+  /**
+   * 将 Token 忽略路径转换为 Spring Security 请求匹配器。
+   */
+  private static final RequestMatcher TOKEN_IGNORED_ENDPOINTS_MATCHER = new OrRequestMatcher(
+    Arrays.stream(TOKEN_IGNORED_ENDPOINTS).map(path -> PathPatternRequestMatcher.withDefaults().matcher(path))
+      .toArray(RequestMatcher[]::new));
+
+  /**
+   * 不要求 CSRF Token 的写请求。
+   *
+   * <p>注册和登录不依赖浏览器已有的 Cookie 凭证，因此允许客户端在没有 CSRF Token 时提交。
+   * refresh 和 logout 依赖 HttpOnly Cookie，必须继续保留 CSRF 防护。
+   */
+  private static final RequestMatcher CSRF_IGNORED_REQUEST_MATCHER = new OrRequestMatcher(
+    PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/auth/register"),
+    PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/auth/login"));
 
   /**
    * 创建浏览器跨域配置
@@ -50,6 +88,23 @@ public class SecurityConfig {
   }
 
   /**
+   * 创建按请求路径决定是否解析 Bearer Token 的解析器。
+   *
+   * @return 自定义 Bearer Token 解析器
+   */
+  @Bean
+  public BearerTokenResolver bearerTokenResolver() {
+    BearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
+
+    return request -> {
+      if (TOKEN_IGNORED_ENDPOINTS_MATCHER.matches(request)) {
+        return null;
+      }
+      return defaultResolver.resolve(request);
+    };
+  }
+
+  /**
    * 创建无状态 JWT 安全过滤链
    *
    * @param http                       HTTP 安全配置构建器
@@ -66,10 +121,12 @@ public class SecurityConfig {
     ApiAuthenticationEntryPoint authenticationEntryPoint,
     ApiAccessDeniedHandler accessDeniedHandler,
     JwtAuthenticationConverter jwtAuthenticationConverter,
-    CorsConfigurationSource corsConfigurationSource) throws Exception {
+    CorsConfigurationSource corsConfigurationSource,
+    BearerTokenResolver bearerTokenResolver) throws Exception {
 
     // 1.配置 CSRF 防护
-    http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+    http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+      .ignoringRequestMatchers(CSRF_IGNORED_REQUEST_MATCHER));
 
     // 2.配置 CORS 跨域
     http.cors(cors -> cors.configurationSource(corsConfigurationSource));
@@ -85,14 +142,12 @@ public class SecurityConfig {
 
     // 5.配置公开接口和认证要求
     http.authorizeHttpRequests(authorize -> authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-      .requestMatchers("/auth/register", "/auth/login", "/auth/token/refresh", "/auth/logout", "/auth/token/csrf")
-      .permitAll().requestMatchers("/actuator/health", "/v3/api-docs/**", "/swagger-ui/**").permitAll().anyRequest()
-      .authenticated());
+      .requestMatchers(PUBLIC_ENDPOINTS).permitAll().anyRequest().authenticated());
 
     // 6.配置 JWT 身份认证及权限转换
-    http.oauth2ResourceServer(
-      resourceServer -> resourceServer.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
-        .authenticationEntryPoint(authenticationEntryPoint));
+    http.oauth2ResourceServer(resourceServer -> resourceServer.bearerTokenResolver(bearerTokenResolver)
+      .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+      .authenticationEntryPoint(authenticationEntryPoint));
 
     // 7.配置 401 和 403 异常处理
     http.exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(authenticationEntryPoint)
