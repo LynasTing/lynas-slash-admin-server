@@ -24,31 +24,50 @@ import lombok.NoArgsConstructor;
 @Schema(description = "当前登录用户信息")
 public class AuthenticatedUserVo {
 
-  @Schema(description = "用户主键 ID", example = "1")
+  @Schema(description = "用户主键 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
   private Long userId;
 
-  @Schema(description = "登录用户名", example = "admin")
+  @Schema(description = "登录用户名", example = "admin", requiredMode = Schema.RequiredMode.REQUIRED)
   private String username;
 
-  @Schema(description = "用户昵称", example = "管理员")
+  @Schema(
+    description = "用户昵称；未填写时为 null",
+    example = "管理员",
+    nullable = true,
+    requiredMode = Schema.RequiredMode.REQUIRED)
   private String nickname;
 
-  @Schema(description = "电子邮箱", example = "admin@example.com")
+  @Schema(
+    description = "电子邮箱；账号密码注册用户可能为 null",
+    example = "admin@example.com",
+    nullable = true,
+    requiredMode = Schema.RequiredMode.REQUIRED)
   private String email;
 
-  @Schema(description = "手机号码", example = "13800138000")
+  @Schema(
+    description = "手机号码；未填写时为 null",
+    example = "13800138000",
+    nullable = true,
+    requiredMode = Schema.RequiredMode.REQUIRED)
   private String phone;
 
-  @Schema(description = "用户头像地址", example = "/avatars/admin.png")
+  @Schema(
+    description = "用户头像地址；未填写时为 null",
+    example = "/avatars/admin.png",
+    nullable = true,
+    requiredMode = Schema.RequiredMode.REQUIRED)
   private String avatar;
 
-  @Schema(description = "当前用户拥有的角色")
+  @Schema(description = "当前用户拥有的角色", requiredMode = Schema.RequiredMode.REQUIRED)
   private List<AuthRole> roles;
 
-  @Schema(description = "当前用户拥有的业务权限编码", example = "[\"user:list\", \"menu:list\"]")
+  @Schema(
+    description = "当前用户拥有的业务权限编码",
+    example = "[\"user:list\", \"menu:list\"]",
+    requiredMode = Schema.RequiredMode.REQUIRED)
   private List<String> permissions;
 
-  @Schema(description = "当前用户可访问的菜单树")
+  @Schema(description = "当前用户可访问的菜单树", requiredMode = Schema.RequiredMode.REQUIRED)
   private List<AuthMenuNode> menu;
 
   /**

@@ -2,6 +2,7 @@ package com.lynas.slashadmin.common.response;
 
 import com.lynas.slashadmin.common.enums.ResponseCode;
 import com.lynas.slashadmin.common.enums.ResponseCodeEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -14,14 +15,17 @@ public class ApiResponse<T> {
   /**
    * 业务响应码；客户端据此判断请求处理结果。
    */
+  @Schema(description = "业务响应码", example = "200", requiredMode = Schema.RequiredMode.REQUIRED)
   private Integer code;
   /**
    * 可安全展示给客户端的处理说明。
    */
+  @Schema(description = "响应消息", example = "success", requiredMode = Schema.RequiredMode.REQUIRED)
   private String message;
   /**
    * 成功响应承载的业务数据；失败响应通常为 {@code null}。
    */
+  @Schema(description = "业务响应数据；具体类型和空值语义由对应接口响应模型定义", requiredMode = Schema.RequiredMode.REQUIRED)
   private T data;
   public ApiResponse(Integer code, String message, T data) {
     this.code = code;
