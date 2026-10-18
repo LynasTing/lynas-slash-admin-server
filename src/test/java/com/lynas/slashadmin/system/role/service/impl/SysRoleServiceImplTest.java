@@ -25,6 +25,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.transaction.support.SimpleTransactionStatus;
+import com.lynas.slashadmin.auth.service.AuthSessionService;
 
 import java.util.List;
 
@@ -54,6 +55,8 @@ class SysRoleServiceImplTest {
 
   private SysMenuService menuService;
 
+  private AuthSessionService authSessionService;
+
   @BeforeEach
   void setUp() {
     MapperBuilderAssistant assistant = new MapperBuilderAssistant(new MybatisConfiguration(), "role-tests");
@@ -65,7 +68,8 @@ class SysRoleServiceImplTest {
     roleMenuMapper = mock(SysRoleMenuMapper.class);
     userRoleMapper = mock(SysUserRoleMapper.class);
     menuService = mock(SysMenuService.class);
-    service = spy(new SysRoleServiceImpl(menuService, roleMapper, roleMenuMapper, userRoleMapper));
+    authSessionService = mock(AuthSessionService.class);
+    service = spy(new SysRoleServiceImpl(menuService, roleMapper, roleMenuMapper, userRoleMapper, authSessionService));
   }
 
   @Test

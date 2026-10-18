@@ -11,6 +11,7 @@ import com.lynas.slashadmin.system.role.enums.SysRoleEnum;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 角色控制器的请求校验测试。
  */
 @WebMvcTest(SysRoleController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class SysRoleControllerTest {
   @Autowired
   private MockMvc mockMvc;

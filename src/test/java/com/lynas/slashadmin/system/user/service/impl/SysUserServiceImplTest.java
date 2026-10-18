@@ -6,20 +6,25 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.lynas.slashadmin.auth.service.AuthSessionService;
+import static org.mockito.Mockito.mock;
+
 /**
  * 用户服务边界校验测试。
  */
 class SysUserServiceImplTest {
   @Test
   void getUserDetail_whenIdIsNotPositive_throwsBusinessException() {
-    SysUserServiceImpl service = new SysUserServiceImpl(null, null, new BCryptPasswordEncoder());
+    SysUserServiceImpl service = new SysUserServiceImpl(null, null, new BCryptPasswordEncoder(),
+      mock(AuthSessionService.class));
 
     assertThrows(BusinessException.class, () -> service.getSysUserDetail(0L));
   }
 
   @Test
   void deleteUser_whenIdIsNull_throwsBusinessException() {
-    SysUserServiceImpl service = new SysUserServiceImpl(null, null, new BCryptPasswordEncoder());
+    SysUserServiceImpl service = new SysUserServiceImpl(null, null, new BCryptPasswordEncoder(),
+      mock(AuthSessionService.class));
 
     assertThrows(BusinessException.class, () -> service.deleteSysUserById(null));
   }

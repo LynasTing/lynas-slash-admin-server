@@ -15,6 +15,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
+import com.lynas.slashadmin.auth.service.AuthSessionService;
+import com.lynas.slashadmin.system.role.mapper.SysRoleMenuMapper;
+import com.lynas.slashadmin.system.user.mapper.SysUserRoleMapper;
+
+import static org.mockito.Mockito.mock;
+
 class SysMenuServiceImplTest {
   @Test
   void buildMenuTree_buildsNestedNodesWithParentNamesAndSortOrder() {
@@ -35,7 +41,7 @@ class SysMenuServiceImplTest {
 
   @Test
   void validateParent_whenParentDoesNotExist_throwsBusinessException() {
-    SysMenuServiceImpl service = spy(new SysMenuServiceImpl());
+    SysMenuServiceImpl service = spy(newService());
     doReturn(null).when(service).getById(999L);
 
     assertThrows(BusinessException.class, () -> validateParent(service, 1L, request(999L, 3)));
@@ -43,14 +49,14 @@ class SysMenuServiceImplTest {
 
   @Test
   void validateParent_whenParentIsSelf_throwsBusinessException() {
-    SysMenuServiceImpl service = spy(new SysMenuServiceImpl());
+    SysMenuServiceImpl service = spy(newService());
 
     assertThrows(BusinessException.class, () -> validateParent(service, 1L, request(1L, 3)));
   }
 
   @Test
   void validateParent_whenParentIsDescendant_throwsBusinessException() {
-    SysMenuServiceImpl service = spy(new SysMenuServiceImpl());
+    SysMenuServiceImpl service = spy(newService());
     SysMenuEntity descendant = menu(3L, 1L, "子菜单", 3, 0);
     doReturn(descendant).when(service).getById(3L);
 
@@ -59,7 +65,7 @@ class SysMenuServiceImplTest {
 
   @Test
   void validateParent_whenCategoryHierarchyIsInvalid_throwsBusinessException() {
-    SysMenuServiceImpl service = spy(new SysMenuServiceImpl());
+    SysMenuServiceImpl service = spy(newService());
     SysMenuEntity parent = menu(2L, 0L, "页面", 3, 0);
     doReturn(parent).when(service).getById(2L);
 
@@ -68,7 +74,7 @@ class SysMenuServiceImplTest {
 
   @Test
   void deleteSysMenuById_whenMenuHasChildren_throwsBusinessException() {
-    SysMenuServiceImpl service = spy(new SysMenuServiceImpl());
+    SysMenuServiceImpl service = spy(newService());
     doReturn(menu(1L, 0L, "系统管理", 1, 0)).when(service).getById(1L);
     doReturn(true).when(service).hasChildren(1L);
 
@@ -107,5 +113,10 @@ class SysMenuServiceImplTest {
     menu.setStatus(1);
     menu.setHidden(0);
     return menu;
+  }
+
+  private SysMenuServiceImpl newService() {
+    return new SysMenuServiceImpl(mock(AuthSessionService.class), mock(SysRoleMenuMapper.class),
+      mock(SysUserRoleMapper.class));
   }
 }
