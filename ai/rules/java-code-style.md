@@ -30,6 +30,9 @@
 - `@Schema(description = "...")` 必须准确说明字段的业务含义。枚举值、单位、取值范围、排序方向、空值语义或特殊约定会影响调用方时，必须在 `description` 中写清楚。
 - 字段存在具有代表性的合法值时，应提供 `example`；示例必须符合字段类型和真实业务语义，不得使用误导性的占位值。
 - 必填性、只读性、格式或长度约束已在接口契约中确定时，应通过 `requiredMode`、`accessMode`、`format`、`minLength`、`maxLength` 等 `@Schema` 属性表达；未确认的约束不得臆造。
+- 响应 Schema 的 `requiredMode` 表示 JSON 属性是否稳定出现，不局限于请求 DTO。AI 新增或修改 VO、响应 record、嵌套响应模型及统一响应包裹时，必须逐字段确认该属性是否由服务端稳定序列化；稳定出现的属性使用 `requiredMode = Schema.RequiredMode.REQUIRED`。
+- 属性稳定出现且值可能为 `null` 时，必须同时声明 `requiredMode = Schema.RequiredMode.REQUIRED` 与 `nullable = true`，并在 `description` 中说明何种业务场景会返回 `null`。不得用未声明 `requiredMode` 的方式表达可空值，也不得把可能为 `null` 错写为“可省略”。
+- 只有服务端确实可能省略某个 JSON 属性时，才不将其标记为 required；这种省略行为必须在 `description` 中说明触发条件。响应模型的必返性、可空性和示例共同构成前端 TypeScript 类型的依据，不能因 Swagger 自动生成默认值而省略契约信息。
 - VO 字段不再编写与 `@Schema` 重复的 Javadoc 或块注释。仅当字段存在无法在 OpenAPI 契约中表达的实现约束或设计取舍时，才添加简短的中文注释。
 
 ## 枚举与状态值
