@@ -9,6 +9,7 @@ import com.lynas.slashadmin.system.user.mapper.SysUserMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Set;
@@ -24,9 +25,17 @@ public class AuthSessionServiceImpl implements AuthSessionService {
   private final SysUserMapper sysUserMapper;
   private final RefreshTokenMapper refreshTokenMapper;
 
-  public AuthSessionServiceImpl(SysUserMapper sysUserMapper, RefreshTokenMapper refreshTokenMapper) {
+  /**
+   * 统一时间来源。
+   *
+   * <p>生产环境使用系统时间，测试环境使用固定时间，避免撤销时间依赖不可控的系统时钟。
+   */
+  private final Clock clock;
+
+  public AuthSessionServiceImpl(SysUserMapper sysUserMapper, RefreshTokenMapper refreshTokenMapper, Clock clock) {
     this.sysUserMapper = sysUserMapper;
     this.refreshTokenMapper = refreshTokenMapper;
+    this.clock = clock;
   }
 
   @Override
@@ -50,7 +59,7 @@ public class AuthSessionServiceImpl implements AuthSessionService {
     }
 
     // 当前时间
-    LocalDateTime revokedAt = LocalDateTime.now();
+    LocalDateTime revokedAt = LocalDateTime.now(clock);
 
     LambdaUpdateWrapper<RefreshTokenEntity> updateWrapper = new LambdaUpdateWrapper<>();
     // 筛选指定用户的 Refresh Token
@@ -74,11 +83,13 @@ public class AuthSessionServiceImpl implements AuthSessionService {
   @Transactional(rollbackFor = Exception.class)
   public void incrementAuthVersionsAndRevoke(
     Collection<Long> userIds) {
+    // 1.去重并快速结束空集合，避免执行无条件数据库更新
     Set<Long> distinctUserIds = Set.copyOf(userIds);
     if (distinctUserIds.isEmpty()) {
       return;
     }
 
+    // 2.递增数据库认证版本，使旧 Access JWT 的 av 失效
     LambdaUpdateWrapper<SysUserEntity> updateWrapper = new LambdaUpdateWrapper<>();
     // 指定需要更新的用户
     updateWrapper.in(SysUserEntity::getId, distinctUserIds);
