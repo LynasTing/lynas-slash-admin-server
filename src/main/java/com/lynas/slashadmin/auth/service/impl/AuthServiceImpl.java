@@ -9,6 +9,7 @@ import com.lynas.slashadmin.auth.enums.AuthCodeEnum;
 import com.lynas.slashadmin.auth.mapper.RefreshTokenMapper;
 import com.lynas.slashadmin.auth.model.AuthenticatedUser;
 import com.lynas.slashadmin.auth.service.AuthService;
+import com.lynas.slashadmin.auth.service.AuthSessionService;
 import com.lynas.slashadmin.auth.service.RefreshTokenCookieService;
 import com.lynas.slashadmin.auth.service.TokenService;
 import com.lynas.slashadmin.auth.service.UserAuthorizationService;
@@ -126,11 +127,19 @@ public class AuthServiceImpl implements AuthService {
    */
   private final SysUserRoleMapper sysUserRoleMapper;
 
+  /**
+   * 认证会话失效服务。
+   *
+   * <p>logout 成功后使用该服务递增 authVersion，并撤销该用户全部 Refresh Token。
+   * 递增 authVersion 会让已签发的旧 Access JWT 立即失效。
+   */
+  private final AuthSessionService authSessionService;
+
   public AuthServiceImpl(UserAuthorizationService userAuthorizationService, PasswordEncoder passwordEncoder,
     TokenService tokenService, RefreshTokenMapper refreshTokenMapper,
     RefreshTokenCookieService refreshTokenCookieService, JwtProperties jwtProperties, Clock clock,
     PlatformTransactionManager transactionManager, SysUserMapper sysUserMapper, SysRoleMapper sysRoleMapper,
-    SysUserRoleMapper sysUserRoleMapper) {
+    SysUserRoleMapper sysUserRoleMapper, AuthSessionService authSessionService) {
     this.userAuthorizationService = userAuthorizationService;
     this.passwordEncoder = passwordEncoder;
     this.tokenService = tokenService;
@@ -142,6 +151,7 @@ public class AuthServiceImpl implements AuthService {
     this.sysUserMapper = sysUserMapper;
     this.sysRoleMapper = sysRoleMapper;
     this.sysUserRoleMapper = sysUserRoleMapper;
+    this.authSessionService = authSessionService;
   }
 
   /**
@@ -443,10 +453,14 @@ public class AuthServiceImpl implements AuthService {
   }
 
   /**
-   * 退出当前 refresh token 会话
+   * 严格退出当前 refresh token 会话
    *
-   * <p>退出操作具备幂等性：没有 Cookie、Cookie 无效或会话已经撤销时，
-   * 都会清除浏览器 Cookie 并正常结束
+   * <p>当前只有 refresh token 存在、未撤销且未过期时，才允许执行认证失效的操作
+   * 成功后递增用户认证版本，使旧 Access JWT 立即失效，同时撤销该用户全部 Refresh Token，
+   * 阻止旧 Refresh Token 再次换取新的 Access JWT
+   *
+   * <p>无效请求也会清除浏览器中的 refresh Cookie，但仍抛出 NEED_LOGIN，
+   * 因此 HTTP 响应必须为 401，而不是成功响应
    *
    * @param request  HTTP 请求对象
    * @param response HTTP 响应对象
@@ -455,38 +469,41 @@ public class AuthServiceImpl implements AuthService {
   public void logout(
     HttpServletRequest request,
     HttpServletResponse response) {
-    // 1.尝试读取 refresh token cookie
-    refreshTokenCookieService.read(request).ifPresent(rawRefreshToken -> {
-      // 2.计算 refresh token 摘要
+    try {
+      // 1.没有 refresh Cookie 时，当前请求没有可验证的登录会话，必须返回 401。
+      String rawRefreshToken = refreshTokenCookieService.read(request)
+        .orElseThrow(() -> new BusinessException(ResponseCodeEnum.NEED_LOGIN));
+
+      // 2.数据库中只保存摘要，因此先计算 Cookie 原文对应的 SHA-256 摘要。
       String tokenHash = tokenService.hashRefreshToken(rawRefreshToken);
 
-      // 3.在事务中锁定并撤销当前会话
+      // 3.在事务中锁定 refresh 会话，避免 logout 与 refresh 并发修改同一条记录。
       transactionTemplate.executeWithoutResult(status -> {
         RefreshTokenEntity token = refreshTokenMapper.selectByTokenHashForUpdate(tokenHash);
 
-        // 4.Cookie 无对应数据库记录时，保持幂等，不抛出异常
+        // 4.查询不到记录时，Cookie 可能是伪造、来自其它环境或已经被清理，不能视为有效会话。
         if (token == null) {
-          return;
+          throw new BusinessException(ResponseCodeEnum.NEED_LOGIN);
         }
 
-        // 5.已经撤销的会话不需要重复更新
+        // 5.已经撤销的 Token 不能再次作为有效 logout 凭证使用。
         if (token.getRevokedAt() != null) {
-          return;
+          throw new BusinessException(ResponseCodeEnum.NEED_LOGIN);
         }
 
-        // 6.记录当前撤销时间
-        token.setRevokedAt(LocalDateTime.now(clock));
-
-        // 7.确认数据库确实完成了更新
-        int updatedRows = refreshTokenMapper.updateById(token);
-        if (updatedRows != 1) {
-          throw new BusinessException(ResponseCodeEnum.SYSTEM_ERROR);
+        // 6.过期 Token 不能证明当前仍然存在有效登录会话。
+        if (token.getExpiresAt() == null || !token.getExpiresAt().isAfter(LocalDateTime.now(clock))) {
+          throw new BusinessException(ResponseCodeEnum.NEED_LOGIN);
         }
+
+        // 7.递增用户认证版本，并撤销该用户全部 Refresh Token。
+        authSessionService.incrementAuthVersionAndRevoke(token.getUserId());
+
       });
-    });
-
-    // 8.无论数据库中是否存在会话，都清除浏览器 Cookie
-    refreshTokenCookieService.clear(response);
+    } finally {
+      // 8.无论成功还是失败，都删除浏览器中的 refresh Cookie，清理无效客户端状态。
+      refreshTokenCookieService.clear(response);
+    }
   }
 
   /**
