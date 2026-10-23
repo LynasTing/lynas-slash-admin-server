@@ -1,6 +1,8 @@
 package com.lynas.slashadmin.common.exception;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.lynas.slashadmin.common.enums.ResponseCode;
+import com.lynas.slashadmin.common.enums.ResponseCodeEnum;
 import com.lynas.slashadmin.common.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -35,6 +37,25 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+  /**
+   * 将具有明确 HTTP 语义的认证错误转换为 HTTP 状态
+   */
+  private HttpStatus resolveBusinessHttpStatus(
+    ResponseCode responseCode) {
+    if (responseCode == ResponseCodeEnum.NEED_LOGIN || responseCode == ResponseCodeEnum.AUTHENTICATION_FAILED) {
+      // 未登录或认证失败，客户端需要清理 Access Token 并回到登录页
+      return HttpStatus.UNAUTHORIZED;
+    }
+
+    if (responseCode == ResponseCodeEnum.FORBIDDEN) {
+      // 已经识别身份但是权限不足
+      return HttpStatus.FORBIDDEN;
+    }
+
+    // 普通业务错误保持现有的兼容行为
+    return HttpStatus.CONFLICT;
+  }
 
   /**
    * 处理无法解析的请求体。
@@ -119,7 +140,9 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ApiResponse<Void>> handleBusinessException(
     BusinessException exception) {
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(exception.getResponseCode()));
+    // 根据认证语义选择 HTTP 状态，同时保留原有业务码和安全提示
+    HttpStatus httpStatus = resolveBusinessHttpStatus(exception.getResponseCode());
+    return ResponseEntity.status(httpStatus).body(ApiResponse.error(exception.getResponseCode()));
   }
 
   /**
