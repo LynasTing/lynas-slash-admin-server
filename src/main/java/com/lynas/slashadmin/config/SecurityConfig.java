@@ -3,6 +3,11 @@ package com.lynas.slashadmin.config;
 import com.lynas.slashadmin.common.security.ApiAccessDeniedHandler;
 import com.lynas.slashadmin.common.security.ApiAuthenticationEntryPoint;
 import com.lynas.slashadmin.common.security.JwtAuthenticationConverter;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import org.springframework.util.StringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -11,6 +16,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
+import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
@@ -19,6 +28,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
@@ -124,8 +134,13 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource,
     BearerTokenResolver bearerTokenResolver) throws Exception {
 
-    // 1.配置 CSRF 防护
-    http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+    // 1.配置 SPA 使用的 Cookie CSRF Token 和请求解析策略
+    http.csrf(csrf -> csrf
+      // XSRF-TOKEN 必须允许 JS 读取，前端才能写入请求头
+      .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+      // 同时兼容 Cookie 原始 Token 和 Spring Security 的 XOR Token
+      .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+      // 注册和登录不依赖已有 Cookie，因此不要求 CSRF Token
       .ignoringRequestMatchers(CSRF_IGNORED_REQUEST_MATCHER));
 
     // 2.配置 CORS 跨域
@@ -156,4 +171,70 @@ public class SecurityConfig {
     // 8.构建并返回
     return http.build();
   }
+
+  /**
+   * 面向 SPA 的 CSRF Token 请求处理器
+   *
+   * <p>响应体继续使用 XOR 编码的 Token 保护 BREACH
+   * HTTP 请求头则真支持前端从 XSRF-TOKEN Cookie 读取的原始 Token
+   */
+  private static final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
+
+    /**
+     * 处理 SPA 请求投中的原始 CSRF Token
+     */
+    private final CsrfTokenRequestHandler plain = new CsrfTokenRequestAttributeHandler();
+
+    /**
+     * 处理响应体或请求参数中的 XOR 编码 CSRF Token
+     */
+    private final CsrfTokenRequestHandler xor = new XorCsrfTokenRequestAttributeHandler();
+
+    /**
+     * 暴露 CSRF Token，并主动加载 deferred Token 以写入 Cookie
+     *
+     * @param request 当前 HTTP 请求
+     * @param response 当前 HTTP 响应
+     * @param csrfToken 延迟加载的 CSRF Token
+     */
+    @Override
+    public void handle(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      Supplier<CsrfToken> csrfToken) {
+      // 响应体中的 Token 继续使用 XOR 编码，保留 BREACH 防护
+      xor.handle(request, response, csrfToken);
+
+      // 确保 CookieCsrfTokenRepository 写入 XSRF-Token Cookie
+      csrfToken.get();
+    }
+
+    /**
+     * 解析客户端提交的 CSRF Token
+     *
+     * <p>SPA 请求头来自 Cookie，使用原始 Token 解析；
+     * 没有请求头时，使用 XOR 解析器兼容服务端表单参数
+     *
+     * @param request 当前 HTTP 请求
+     * @param csrfToken 服务端保存的 CSRF Token
+     *
+     * @return 客户端提交的 Token，未提交时返回 null
+     */
+    @Override
+    public String resolveCsrfTokenValue(
+      HttpServletRequest request,
+      CsrfToken csrfToken) {
+      String headerValue = request.getHeader(csrfToken.getHeaderName());
+
+      if (StringUtils.hasText(headerValue)) {
+        // X-XSRF-TOKEN 来自浏览器 Cookie，使用原生 Token 解析规则
+        return plain.resolveCsrfTokenValue(request, csrfToken);
+      }
+
+      // 没有请求头时，兼容使用 _csrf 参数提交的 XOR Token
+      return xor.resolveCsrfTokenValue(request, csrfToken);
+    }
+
+  }
+
 }

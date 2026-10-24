@@ -3,9 +3,16 @@ package com.lynas.slashadmin.config;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
+import org.springframework.security.web.csrf.DefaultCsrfToken;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.lang.reflect.Constructor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,8 +59,49 @@ class SecurityConfigTest {
     assertFalse(matcher.matches(request("GET", "/auth/register", null)));
   }
 
+  @Test
+  void spaCsrfHandler_resolvesRawTokenFromRequestHeader() throws ReflectiveOperationException {
+    CsrfTokenRequestHandler handler = spaCsrfHandler();
+    MockHttpServletRequest request = request("POST", "/auth/logout", null);
+    CsrfToken csrfToken = new DefaultCsrfToken("X-XSRF-TOKEN", "_csrf", "raw-token");
+    request.addHeader(csrfToken.getHeaderName(), csrfToken.getToken());
+
+    assertEquals("raw-token", handler.resolveCsrfTokenValue(request, csrfToken));
+  }
+
+  @Test
+  void spaCsrfHandler_withoutHeader_keepsXorParameterCompatibility() throws ReflectiveOperationException {
+    CsrfTokenRequestHandler handler = spaCsrfHandler();
+    MockHttpServletRequest request = request("POST", "/auth/logout", null);
+    CsrfToken csrfToken = new DefaultCsrfToken("X-XSRF-TOKEN", "_csrf", "raw-token");
+    request.setParameter(csrfToken.getParameterName(), csrfToken.getToken());
+
+    assertNull(handler.resolveCsrfTokenValue(request, csrfToken));
+  }
+
+  @Test
+  void spaCsrfHandler_handleLoadsDeferredTokenForCookieRepository() throws ReflectiveOperationException {
+    CsrfTokenRequestHandler handler = spaCsrfHandler();
+    AtomicBoolean tokenLoaded = new AtomicBoolean();
+    CsrfToken csrfToken = new DefaultCsrfToken("X-XSRF-TOKEN", "_csrf", "raw-token");
+
+    handler.handle(new MockHttpServletRequest(), new MockHttpServletResponse(), () -> {
+      tokenLoaded.set(true);
+      return csrfToken;
+    });
+
+    assertTrue(tokenLoaded.get());
+  }
+
   private RequestMatcher csrfMatcher() {
     return (RequestMatcher) ReflectionTestUtils.getField(SecurityConfig.class, "CSRF_IGNORED_REQUEST_MATCHER");
+  }
+
+  private CsrfTokenRequestHandler spaCsrfHandler() throws ReflectiveOperationException {
+    Class<?> handlerType = Class.forName(SecurityConfig.class.getName() + "$SpaCsrfTokenRequestHandler");
+    Constructor<?> constructor = handlerType.getDeclaredConstructor();
+    constructor.setAccessible(true);
+    return (CsrfTokenRequestHandler) constructor.newInstance();
   }
 
   private MockHttpServletRequest request(
