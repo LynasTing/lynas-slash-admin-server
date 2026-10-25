@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
    * <p>Jackson 严格模式下，DTO 中未声明的字段会被视为请求格式错误，而不是服务端故障。
    *
    * @param exception Spring 封装的请求体解析异常
-   * @param request 当前 HTTP 请求
+   * @param request   当前 HTTP 请求
    * @return HTTP 400，响应体说明请求体格式错误或未识别字段
    */
   @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -122,7 +122,7 @@ public class GlobalExceptionHandler {
    * <p>数据库连接、SQL 语句或表结构异常属于服务端运行环境问题，详细堆栈仅写入服务端日志。
    *
    * @param exception 数据库访问异常
-   * @param request 当前 HTTP 请求
+   * @param request   当前 HTTP 请求
    * @return HTTP 500，避免向客户端暴露数据库内部信息
    */
   @ExceptionHandler(DataAccessException.class)
@@ -158,7 +158,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(
     Exception exception,
     HttpServletRequest request) {
-    LOGGER.error("未处理的服务端异常: method={}, uri={}", request.getMethod(), request.getRequestURI(), exception);
+    LOGGER.error("未处理的服务端异常: method={}, url={}", request.getMethod(), request.getRequestURI(), exception);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
       .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "服务器内部错误"));
   }
