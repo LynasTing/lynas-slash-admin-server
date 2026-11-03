@@ -5,6 +5,9 @@ import com.lynas.slashadmin.common.enums.ResponseCode;
 import com.lynas.slashadmin.common.enums.ResponseCodeEnum;
 import com.lynas.slashadmin.common.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.nio.file.AccessDeniedException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -156,11 +159,10 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(
-    Exception exception,
+    AccessDeniedException exception,
     HttpServletRequest request) {
-    LOGGER.error("未处理的服务端异常: method={}, url={}", request.getMethod(), request.getRequestURI(), exception);
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-      .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "服务器内部错误"));
+    LOGGER.warn("未处理的服务端异常: method={}, url={}", request.getMethod(), request.getRequestURI());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(ResponseCodeEnum.FORBIDDEN));
   }
 
   /**
